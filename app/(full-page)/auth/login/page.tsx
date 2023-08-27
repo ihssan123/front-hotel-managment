@@ -42,7 +42,7 @@ const LoginPage = () => {
           localStorage.setItem('user', JSON.stringify(user));
 
           
-          router.push('/')
+          router.push('/uikit/table')
           // You might want to redirect the user or show a success message here
         } catch (error) {
           console.error('Registration failed:', error);

@@ -23,7 +23,7 @@ const AppMenu = () => {
                 
                 { label: 'Invalid State', icon: 'pi pi-fw pi-exclamation-circle', to: '/uikit/invalidstate' },
                 
-                { label: 'Table', icon: 'pi pi-fw pi-table', to: '/uikit/table' },
+                { label: 'Réservations', icon: 'pi pi-fw pi-table', to: '/uikit/table' },
                 { label: 'List', icon: 'pi pi-fw pi-list', to: '/uikit/list' },
                 
                 
