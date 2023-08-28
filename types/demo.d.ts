@@ -117,6 +117,7 @@ declare namespace Demo {
         createdAt: number;
     }
 
+
     //ProductService
     type Product = {
         id?: string;
@@ -132,7 +133,21 @@ declare namespace Demo {
         orders?: ProductOrder[];
         [key: string]: string | string[] | number | boolean | undefined | ProductOrder[] | InventoryStatus;
     };
-
+    type Cabin = {
+     
+        name:string;
+        price:number
+        capacite: number;
+        descreption: string;
+    }
+    type CabinAff = {
+        idcabin?: number | null;
+        name:string;
+        price:number
+        capacite: number;
+        descreption: string;
+        imageFile: Blob | null;
+    }
     type ProductOrder = {
         id?: string;
         productCode?: string;
