@@ -1,0 +1,40 @@
+/* tableStyles.css */
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.table-header th,
+.table tbody td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Add space between columns */
+.table-header th:not(:first-child),
+.table tbody td:not(:first-child) {
+    padding-left: 20px;
+}
+.accept-button,
+.refuse-button {
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    outline: none;
+}
+
+.accept-button:focus,
+.refuse-button:focus {
+    outline: none;
+}
+
+.accept-button:hover {
+    opacity: 0.8;
+}
+
+.refuse-button:hover {
+    opacity: 0.8;
+}

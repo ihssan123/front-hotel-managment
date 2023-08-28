@@ -18,9 +18,37 @@ import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 import { classNames } from 'primereact/utils';
 import React, { useEffect, useState } from 'react';
 import type { Demo } from '../../../../types/types';
-
+import axios from 'axios';
+import './tableStyles.css'; // Import the external CSS file
+import 'primeicons/primeicons.css';
+import Modal from 'react-modal';
+import { DataGrid, GridColDef, GridValueGetterParams } from '@mui/x-data-grid';
+const columns: GridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'firstName', headerName: 'First name', width: 130 },
+    { field: 'lastName', headerName: 'Last name', width: 130 },
+    {
+      field: 'age',
+      headerName: 'Age',
+      type: 'number',
+      width: 90,
+    },
+    {
+      field: 'fullName',
+      headerName: 'Full name',
+      description: 'This column has a value getter and is not sortable.',
+      sortable: false,
+      width: 160,
+      valueGetter: (params: GridValueGetterParams) =>
+        `${params.row.firstName || ''} ${params.row.lastName || ''}`,
+    },
+  ];
+  
+ 
 const TableDemo = () => {
-    const [customers1, setCustomers1] = useState<Demo.Customer[]>([]);
+    const token= localStorage.getItem('accessToken');
+    const [dataUpdated, setdataUpdated] = useState(false);
+    const [customers1, setCustomers1] = useState<{}>([]);
     const [customers2, setCustomers2] = useState<Demo.Customer[]>([]);
     const [customers3, setCustomers3] = useState<Demo.Customer[]>([]);
     const [filters1, setFilters1] = useState<DataTableFilterMeta>({});
@@ -31,7 +59,10 @@ const TableDemo = () => {
     const [globalFilterValue1, setGlobalFilterValue1] = useState('');
     const [expandedRows, setExpandedRows] = useState<any[] | DataTableExpandedRows>([]);
     const [allExpanded, setAllExpanded] = useState(false);
-
+    const [data,setData]=useState([])
+    const [loading, setLoading] = useState(true);
+    let response;
+    
     const representatives = [
         { name: 'Amy Elsner', image: 'amyelsner.png' },
         { name: 'Anna Fali', image: 'annafali.png' },
@@ -358,106 +389,181 @@ const TableDemo = () => {
     };
 
     const header1 = renderHeader1();
+    useEffect(() => {
+       
+        fetchData();
+      }, [dataUpdated]);
+      const fetchData = async () => {
+        try {
+           response = await axios.get(`http://localhost:8080/api/v1/reservations/inProgress`, {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include the bearer token
+            },
+          });
+          setData(response.data)
+ 
+          setLoading(false)
+          console.log(data); // Check the API response data
+        
+          
+         
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setLoading(false)
+       
+        }
+      };
+     // Import statements for your dependencies and other functions
 
+     const formatDateRange = (startDateString: string, endDateString: string) => {
+        const startDate = new Date(startDateString);
+        const endDate = new Date(endDateString);
+        const formattedStartDate = `${startDate.getFullYear()}-${startDate.getMonth() + 1}-${startDate.getDate()}`;
+        const formattedEndDate = `${endDate.getFullYear()}-${endDate.getMonth() + 1}-${endDate.getDate()}`;
+        return `${formattedStartDate} ----> ${formattedEndDate}`;
+    };
+    const handleAcceptReservation = async (event: React.FormEvent, id: number) => {
+        event.preventDefault();
+    
+        // Show a confirmation dialog
+        const confirmed = window.confirm("Are you sure you want to accept this reservation?");
+    
+        if (confirmed) {
+            try {
+                const response = await axios.put(
+                    `http://localhost:8080/api/v1/reservations/accept/${id}`,
+                    {},
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                );
+    
+                console.log(response.data);
+                const updatedData = data.map((user) => {
+                    if (user.id_reservation === id) {
+                        return {
+                            ...user,
+                            state: 'accepted',
+                        };
+                    }
+                    return user;
+                });
+                setData(updatedData);
+                fetchData(); // Fetch updated data
+            } catch (error) {
+                console.error('Error accepting reservation:', error);
+                // Handle errors appropriately, e.g., show an error message
+            }
+        }
+    };
+    const handleRefuseReservation = async (id: number) => {
+        // Show a confirmation dialog
+        const confirmed = window.confirm("Are you sure you want to refuse this reservation?");
+        
+        if (confirmed) {
+            try {
+                const response = await axios.put(
+                    `http://localhost:8080/api/v1/reservations/refuse/${id}`,
+                    {},
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                );
+    
+                console.log(response.data);
+                const updatedData = data.map((reservation) => {
+                    if (reservation.id_reservation === id) {
+                        return {
+                            ...reservation,
+                            state: 'refused',
+                        };
+                    }
+                    return reservation;
+                });
+                setData(updatedData);
+                fetchData(); // Fetch updated data
+            } catch (error) {
+                console.error('Error refusing reservation:', error);
+                // Handle errors appropriately, e.g., show an error message
+            }
+        }
+    };
+    
+    
     return (
+
         <div className="grid">
-            <div className="col-12">
-                <div className="card">
-                    <h5>Filter Menu</h5>
-                    <DataTable
-                        value={customers1}
-                        paginator
-                        className="p-datatable-gridlines"
-                        showGridlines
-                        rows={10}
-                        dataKey="id"
-                        filters={filters1}
-                        filterDisplay="menu"
-                        loading={loading1}
-                        responsiveLayout="scroll"
-                        emptyMessage="No customers found."
-                        header={header1}
-                    >
-                        <Column field="name" header="Name" filter filterPlaceholder="Search by name" style={{ minWidth: '12rem' }} />
-                        <Column header="Country" filterField="country.name" style={{ minWidth: '12rem' }} body={countryBodyTemplate} filter filterPlaceholder="Search by country" filterClear={filterClearTemplate} filterApply={filterApplyTemplate} />
-                        <Column
-                            header="Agent"
-                            filterField="representative"
-                            showFilterMatchModes={false}
-                            filterMenuStyle={{ width: '14rem' }}
-                            style={{ minWidth: '14rem' }}
-                            body={representativeBodyTemplate}
-                            filter
-                            filterElement={representativeFilterTemplate}
-                        />
-                        <Column header="Date" filterField="date" dataType="date" style={{ minWidth: '10rem' }} body={dateBodyTemplate} filter filterElement={dateFilterTemplate} />
-                        <Column header="Balance" filterField="balance" dataType="numeric" style={{ minWidth: '10rem' }} body={balanceBodyTemplate} filter filterElement={balanceFilterTemplate} />
-                        <Column field="status" header="Status" filterMenuStyle={{ width: '14rem' }} style={{ minWidth: '12rem' }} body={statusBodyTemplate} filter filterElement={statusFilterTemplate} />
-                        <Column field="activity" header="Activity" showFilterMatchModes={false} style={{ minWidth: '12rem' }} body={activityBodyTemplate} filter filterElement={activityFilterTemplate} />
-                        <Column field="verified" header="Verified" dataType="boolean" bodyClassName="text-center" style={{ minWidth: '8rem' }} body={verifiedBodyTemplate} filter filterElement={verifiedFilterTemplate} />
-                    </DataTable>
-                </div>
+            {loading ? 
+           <>khawya </> :
+           <>3amra</>
+            
+        }
+             <div className="col-12">
+             <div className="col-12">
+             <div className="card">
+    <h5>La liste de reservations</h5>
+    <ToggleButton checked={idFrozen} onChange={(e) => setIdFrozen(e.value)} onIcon="pi pi-lock" offIcon="pi pi-lock-open" onLabel="Unfreeze Id" offLabel="Freeze Id" style={{ width: '10rem' }} />
+
+    <table className="table mt-3">
+        <thead className="table-header">
+            <tr>
+                <th>Nom</th>
+                <th>Prenom</th>
+                <th>Email</th>
+                <th>Telephone</th>
+                <th>Numero de chambre</th>
+                <th>Date début --- Date fin</th>
+                <th>Status</th>
+                <th>Prix Total</th>
+                
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+    {data.map((user) => (
+        <tr key={user.id_reservation}>
+            <td>{user.client.firstName}</td>
+            <td>{user.client.lastName}</td>
+
+            <td className={classNames({ 'font-bold': idFrozen })}>{user.client.email}</td>
+            <td>{user.client.phoneNumber}</td>
+            <td>{user.cabin.idcabin}</td>
+        
+            <td>{formatDateRange(user.dateDeb, user.dateFin)}</td>
+            
+            <td>{user.state}</td>
+            <td className={classNames({ 'font-bold': idFrozen })}>{user.totalPrice}</td>
+            <td className={classNames({ 'font-bold': idFrozen })}>
+            <button className="accept-button" onClick={(event) => handleAcceptReservation(event, user.id_reservation)}>
+    <i className="pi pi-check-circle" style={{ color: 'green' }} />
+</button>
+
+<button className="refuse-button" onClick={() => handleRefuseReservation(user.id_reservation)}>
+    <i className="pi pi-times-circle" style={{ color: 'red' }} />
+</button>
+
+</td>
+
+        </tr>
+    ))}
+</tbody>
+    </table>
+</div>
+
+</div>
+
+</div>
+
+
+           
             </div>
 
-            <div className="col-12">
-                <div className="card">
-                    <h5>Frozen Columns</h5>
-                    <ToggleButton checked={idFrozen} onChange={(e) => setIdFrozen(e.value)} onIcon="pi pi-lock" offIcon="pi pi-lock-open" onLabel="Unfreeze Id" offLabel="Freeze Id" style={{ width: '10rem' }} />
-
-                    <DataTable value={customers2} scrollable scrollHeight="400px" loading={loading2} className="mt-3">
-                        <Column field="name" header="Name" style={{ flexGrow: 1, flexBasis: '160px' }} frozen className="font-bold"></Column>
-                        <Column field="id" header="Id" style={{ flexGrow: 1, flexBasis: '100px' }} frozen={idFrozen} alignFrozen="left" bodyClassName={classNames({ 'font-bold': idFrozen })}></Column>
-                        <Column field="country.name" header="Country" style={{ flexGrow: 1, flexBasis: '200px' }} body={countryBodyTemplate}></Column>
-                        <Column field="date" header="Date" style={{ flexGrow: 1, flexBasis: '200px' }} body={dateBodyTemplate}></Column>
-                        <Column field="company" header="Company" style={{ flexGrow: 1, flexBasis: '200px' }}></Column>
-                        <Column field="status" header="Status" style={{ flexGrow: 1, flexBasis: '200px' }} body={statusBodyTemplate}></Column>
-                        <Column field="activity" header="Activity" style={{ flexGrow: 1, flexBasis: '200px' }}></Column>
-                        <Column field="representative.name" header="Representative" style={{ flexGrow: 1, flexBasis: '200px' }} body={representativeBodyTemplate}></Column>
-                        <Column field="balance" header="Balance" body={balanceTemplate} frozen style={{ flexGrow: 1, flexBasis: '120px' }} className="font-bold" alignFrozen="right"></Column>
-                    </DataTable>
-                </div>
-            </div>
-
-            <div className="col-12">
-                <div className="card">
-                    <h5>Row Expand</h5>
-                    <DataTable value={products} expandedRows={expandedRows} onRowToggle={(e) => setExpandedRows(e.data)} responsiveLayout="scroll" rowExpansionTemplate={rowExpansionTemplate} dataKey="id" header={header}>
-                        <Column expander style={{ width: '3em' }} />
-                        <Column field="name" header="Name" sortable />
-                        <Column header="Image" body={imageBodyTemplate} />
-                        <Column field="price" header="Price" sortable body={priceBodyTemplate} />
-                        <Column field="category" header="Category" sortable />
-                        <Column field="rating" header="Reviews" sortable body={ratingBodyTemplate} />
-                        <Column field="inventoryStatus" header="Status" sortable body={statusBodyTemplate2} />
-                    </DataTable>
-                </div>
-            </div>
-
-            <div className="col-12">
-                <div className="card">
-                    <h5>Subheader Grouping</h5>
-                    <DataTable
-                        value={customers3}
-                        rowGroupMode="subheader"
-                        groupRowsBy="representative.name"
-                        sortMode="single"
-                        sortField="representative.name"
-                        sortOrder={1}
-                        scrollable
-                        scrollHeight="400px"
-                        rowGroupHeaderTemplate={headerTemplate}
-                        rowGroupFooterTemplate={footerTemplate}
-                        responsiveLayout="scroll"
-                    >
-                        <Column field="name" header="Name" style={{ minWidth: '200px' }}></Column>
-                        <Column field="country" header="Country" body={countryBodyTemplate} style={{ minWidth: '200px' }}></Column>
-                        <Column field="company" header="Company" style={{ minWidth: '200px' }}></Column>
-                        <Column field="status" header="Status" body={statusBodyTemplate} style={{ minWidth: '200px' }}></Column>
-                        <Column field="date" header="Date" style={{ minWidth: '200px' }}></Column>
-                    </DataTable>
-                </div>
-            </div>
-        </div>
     );
 };
 
