@@ -21,7 +21,7 @@ import type { Demo } from '../../../../types/types';
 import axios from 'axios';
 import './tableStyles.css'; // Import the external CSS file
 import 'primeicons/primeicons.css';
-
+import Modal from 'react-modal';
 import { DataGrid, GridColDef, GridValueGetterParams } from '@mui/x-data-grid';
 const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
@@ -44,21 +44,10 @@ const columns: GridColDef[] = [
     },
   ];
   
-  const rows = [
-    { id: 1, lastName: 'Snow', firstName: 'Jon', age: 35 },
-    { id: 2, lastName: 'Lannister', firstName: 'Cersei', age: 42 },
-    { id: 3, lastName: 'Lannister', firstName: 'Jaime', age: 45 },
-    { id: 4, lastName: 'Stark', firstName: 'Arya', age: 16 },
-    { id: 5, lastName: 'Targaryen', firstName: 'Daenerys', age: null },
-    { id: 6, lastName: 'Melisandre', firstName: null, age: 150 },
-    { id: 7, lastName: 'Clifford', firstName: 'Ferrara', age: 44 },
-    { id: 8, lastName: 'Frances', firstName: 'Rossini', age: 36 },
-    { id: 9, lastName: 'Roxie', firstName: 'Harvey', age: 65 },
-  ];
-  
+ 
 const TableDemo = () => {
     const token= localStorage.getItem('accessToken');
-    const [dataUpdated, setdataUpdated] = useState(false)
+    const [dataUpdated, setdataUpdated] = useState(false);
     const [customers1, setCustomers1] = useState<{}>([]);
     const [customers2, setCustomers2] = useState<Demo.Customer[]>([]);
     const [customers3, setCustomers3] = useState<Demo.Customer[]>([]);
@@ -73,7 +62,7 @@ const TableDemo = () => {
     const [data,setData]=useState([])
     const [loading, setLoading] = useState(true);
     let response;
-
+    
     const representatives = [
         { name: 'Amy Elsner', image: 'amyelsner.png' },
         { name: 'Anna Fali', image: 'annafali.png' },
@@ -406,7 +395,7 @@ const TableDemo = () => {
       }, [dataUpdated]);
       const fetchData = async () => {
         try {
-           response = await axios.get(`http://localhost:8080/reservations/inProgress`, {
+           response = await axios.get(`http://localhost:8080/api/v1/reservations/inProgress`, {
             headers: {
               Authorization: `Bearer ${token}`, // Include the bearer token
             },
@@ -436,35 +425,73 @@ const TableDemo = () => {
     const handleAcceptReservation = async (event: React.FormEvent, id: number) => {
         event.preventDefault();
     
-       // Replace with your actual token
+        // Show a confirmation dialog
+        const confirmed = window.confirm("Are you sure you want to accept this reservation?");
     
-        try {
-            const response = await axios.put(
-                `http://localhost:8080/reservations/accept/${id}`,
-                {},
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
+        if (confirmed) {
+            try {
+                const response = await axios.put(
+                    `http://localhost:8080/api/v1/reservations/accept/${id}`,
+                    {},
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                        }
                     }
-                }
-            );
+                );
     
-            console.log(response.data);
-            const updatedData = data.map((user) => {
-                if (user.id_reservation === id) {
-                    return {
-                        ...user,
-                        state: 'accepted' // Update the status to 'accepted'
-                    };
-                }
-                return user;
-            });
-            setData(updatedData);
-            // Handle success, e.g., show a success message or update UI
-        } catch (error) {
-            console.error('Error accepting reservation:', error);
-            // Handle errors appropriately, e.g., show an error message
+                console.log(response.data);
+                const updatedData = data.map((user) => {
+                    if (user.id_reservation === id) {
+                        return {
+                            ...user,
+                            state: 'accepted',
+                        };
+                    }
+                    return user;
+                });
+                setData(updatedData);
+                fetchData(); // Fetch updated data
+            } catch (error) {
+                console.error('Error accepting reservation:', error);
+                // Handle errors appropriately, e.g., show an error message
+            }
+        }
+    };
+    const handleRefuseReservation = async (id: number) => {
+        // Show a confirmation dialog
+        const confirmed = window.confirm("Are you sure you want to refuse this reservation?");
+        
+        if (confirmed) {
+            try {
+                const response = await axios.put(
+                    `http://localhost:8080/api/v1/reservations/refuse/${id}`,
+                    {},
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                );
+    
+                console.log(response.data);
+                const updatedData = data.map((reservation) => {
+                    if (reservation.id_reservation === id) {
+                        return {
+                            ...reservation,
+                            state: 'refused',
+                        };
+                    }
+                    return reservation;
+                });
+                setData(updatedData);
+                fetchData(); // Fetch updated data
+            } catch (error) {
+                console.error('Error refusing reservation:', error);
+                // Handle errors appropriately, e.g., show an error message
+            }
         }
     };
     
@@ -501,8 +528,8 @@ const TableDemo = () => {
         <tbody>
     {data.map((user) => (
         <tr key={user.id_reservation}>
-            <td>{user.client.firstname}</td>
-            <td>{user.client.lastname}</td>
+            <td>{user.client.firstName}</td>
+            <td>{user.client.lastName}</td>
 
             <td className={classNames({ 'font-bold': idFrozen })}>{user.client.email}</td>
             <td>{user.client.phoneNumber}</td>
@@ -517,9 +544,10 @@ const TableDemo = () => {
     <i className="pi pi-check-circle" style={{ color: 'green' }} />
 </button>
 
-    <button className="refuse-button" onClick={() => handleRefuseReservation(user.id_reservation)}>
-        <i className="pi pi-times-circle" style={{ color: 'red' }} />
-    </button>
+<button className="refuse-button" onClick={() => handleRefuseReservation(user.id_reservation)}>
+    <i className="pi pi-times-circle" style={{ color: 'red' }} />
+</button>
+
 </td>
 
         </tr>
