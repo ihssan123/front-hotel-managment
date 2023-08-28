@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
+
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -16,6 +17,7 @@ import { classNames } from 'primereact/utils';
 import React, { useEffect, useRef, useState } from 'react';
 import { ProductService } from '../../../../demo/service/ProductService';
 import { Demo } from '../../../../types/types';
+import axios from 'axios';
 
 /* @todo Used 'as any' for types here. Will fix in next version due to onSelectionChange event type issue. */
 const Crud = () => {
@@ -30,12 +32,31 @@ const Crud = () => {
         rating: 0,
         inventoryStatus: 'INSTOCK'
     };
+    let emptyCabin: Demo.Cabin = {
 
-    const [products, setProducts] = useState(null);
+        name: '',
+        descreption: '',
+        price: 0,
+        capacite: 0,
+    };
+    let emptyCabinAff: Demo.CabinAff = {
+        idcabin: 0,
+        name: '',
+        descreption: '',
+        price: 0,
+        capacite: 0,
+        imageFile: null,
+    };
+
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [cabins, setCabins] = useState(null);
     const [productDialog, setProductDialog] = useState(false);
+    const [selectedCabins, setSelectedCabins] = useState<Demo.CabinAff[]>([]);
+    const [editDialog, setEditDialog] = useState(false);
     const [deleteProductDialog, setDeleteProductDialog] = useState(false);
     const [deleteProductsDialog, setDeleteProductsDialog] = useState(false);
-    const [product, setProduct] = useState<Demo.Product>(emptyProduct);
+    const [cabin, setCabin] = useState<Demo.Cabin>(emptyCabin);
+    const [cabinaff, setCabinAff] = useState<Demo.CabinAff>(emptyCabinAff);
     const [selectedProducts, setSelectedProducts] = useState(null);
     const [submitted, setSubmitted] = useState(false);
     const [globalFilter, setGlobalFilter] = useState('');
@@ -43,18 +64,91 @@ const Crud = () => {
     const dt = useRef<DataTable<any>>(null);
 
     useEffect(() => {
-        ProductService.getProducts().then((data) => setProducts(data as any));
-    }, []);
+        const fetchData = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/api/v1/cabins/open/getallCabins');
+                setCabins(response.data);
 
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
     const formatCurrency = (value: number) => {
         return value.toLocaleString('en-US', {
             style: 'currency',
             currency: 'USD'
         });
     };
+    // const onUpload = (event: any) => {
+
+
+    //     const uploadedFile = event.files[0];
+    //     setSelectedImage(uploadedFile);
+
+    //     // Log selected image properties
+    //     console.log("Selected Image:", selectedImage);
+
+    //     toast.current?.show({
+    //         severity: 'info',
+    //         summary: 'Success',
+    //         detail: 'File Uploaded',
+    //         life: 3000
+    //     });
+    // };
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files && event.target.files[0];
+        if (file) {
+            setSelectedImage(file);
+        }
+    };
+
+    // Rest of your code...
+
+    const saveProduct = () => {
+        setSubmitted(true);
+
+        if (cabin.name.trim() && selectedImage) {
+            const formData = new FormData();
+            formData.append('cabinImage', selectedImage);
+            formData.append('cabin', JSON.stringify(cabin));
+            const token = localStorage.getItem('accessToken');
+
+            // Set headers with authorization token
+            const headers = {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data'
+            };
+
+            axios.post('http://localhost:8080/api/v1/cabins/add', formData, { headers })
+                .then(response => {
+                    setProductDialog(false);
+                    setCabin(emptyCabin);
+                    setSelectedImage(null);
+                    toast.current?.show({
+                        severity: 'success',
+                        summary: 'Successful',
+                        detail: 'Cabin Saved',
+                        life: 3000
+                    });
+                })
+                .catch(error => {
+                    console.error('Error saving product:', error);
+                });
+        } else {
+            // Handle case where selectedImage is null or not a valid image
+            console.error('Selected image is not valid');
+        }
+    };
+
+
+    // Rest of your code...
+
 
     const openNew = () => {
-        setProduct(emptyProduct);
+        setCabin(emptyCabin);
         setSubmitted(false);
         setProductDialog(true);
     };
@@ -62,6 +156,12 @@ const Crud = () => {
     const hideDialog = () => {
         setSubmitted(false);
         setProductDialog(false);
+        setSelectedCabins([]);
+        setEditDialog(false);
+    };
+    const hideDialogedit = () => {
+        setSubmitted(false);
+        setEditDialog(false);
     };
 
     const hideDeleteProductDialog = () => {
@@ -69,160 +169,194 @@ const Crud = () => {
     };
 
     const hideDeleteProductsDialog = () => {
+
         setDeleteProductsDialog(false);
     };
 
-    const saveProduct = () => {
-        setSubmitted(true);
+    /* const saveProduct = () => {
+         setSubmitted(true);
+ 
+         if (cabin.name.trim()) {
+             let _cabins = [...(cabins as any)];
+             let _cabin = { ...cabin };
+             if (cabin.idcabin) {
+             //    const index = findIndexById(cabin.idcabin);
+ 
+               //  _idcabins[index] = _idcabin;
+                 toast.current?.show({
+                     severity: 'success',
+                     summary: 'Successful',
+                     detail: 'Cabin Updated',
+                     life: 3000
+                 });
+             } else {
+                // _cabin.idcabin = createId();
+                // _cabin.image = 'product-placeholder.svg';
+                 _cabins.push(_cabin);
+                 toast.current?.show({
+                     severity: 'success',
+                     summary: 'Successful',
+                     detail: 'Product Created',
+                     life: 3000
+                 });
+             }
+ 
+             setCabins(_cabins as any);
+             setProductDialog(false);
+             setCabin(emptyCabin);
+         }
+     };*/
 
-        if (product.name.trim()) {
-            let _products = [...(products as any)];
-            let _product = { ...product };
-            if (product.id) {
-                const index = findIndexById(product.id);
-
-                _products[index] = _product;
-                toast.current?.show({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Updated',
-                    life: 3000
-                });
-            } else {
-                _product.id = createId();
-                _product.image = 'product-placeholder.svg';
-                _products.push(_product);
-                toast.current?.show({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Created',
-                    life: 3000
-                });
-            }
-
-            setProducts(_products as any);
-            setProductDialog(false);
-            setProduct(emptyProduct);
-        }
+    const editCabin = (cabin: Demo.CabinAff) => {
+        setCabinAff({ ...cabin });
+        setEditDialog(true);
     };
 
-    const editProduct = (product: Demo.Product) => {
-        setProduct({ ...product });
-        setProductDialog(true);
-    };
+    // const confirmDeleteCabin = (cabin: Demo.CabinAff) => {
+    //     setCabinAff(cabin);
+    //     setDeleteProductDialog(true);
+    // };
 
-    const confirmDeleteProduct = (product: Demo.Product) => {
-        setProduct(product);
+    // const deleteProduct = () => {
+
+    //     let _cabins = (cabins as any)?.filter((val: any) => val.id !== cabinaff.idcabin);
+    //     console.log(cabinaff.idcabin);
+    //     setCabins(_cabins);
+    //     setDeleteProductDialog(false);
+    //     setCabin(emptyCabin);
+    //     toast.current?.show({
+    //         severity: 'success',
+    //         summary: 'Successful',
+    //         detail: 'Product Deleted',
+    //         life: 3000
+    //     });
+    // };
+
+    const confirmDeleteCabin = (cabin: Demo.CabinAff) => {
+        setCabinAff(cabin);
         setDeleteProductDialog(true);
     };
-
+    
     const deleteProduct = () => {
-        let _products = (products as any)?.filter((val: any) => val.id !== product.id);
-        setProducts(_products);
-        setDeleteProductDialog(false);
-        setProduct(emptyProduct);
-        toast.current?.show({
-            severity: 'success',
-            summary: 'Successful',
-            detail: 'Product Deleted',
-            life: 3000
-        });
+        const token = localStorage.getItem('accessToken');
+        const headers = {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        };
+    
+        axios.delete(`http://localhost:8080/api/v1/cabins/delete/${cabinaff.idcabin}`, { headers })
+            .then(response => {
+                setDeleteProductDialog(false);
+                toast.current?.show({
+                    severity: 'success',
+                    summary: 'Successful',
+                    detail: 'Cabin Deleted',
+                    life: 3000
+                });
+                     window.location.href = window.location.href;
+            })
+            .catch(error => {
+                console.error('Error deleting cabin:', error);
+            });
     };
+    
 
-    const findIndexById = (id: string) => {
-        let index = -1;
-        for (let i = 0; i < (products as any)?.length; i++) {
-            if ((products as any)[i].id === id) {
-                index = i;
-                break;
-            }
-        }
 
-        return index;
-    };
-
-    const createId = () => {
-        let id = '';
-        let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (let i = 0; i < 5; i++) {
-            id += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return id;
-    };
-
-    const exportCSV = () => {
-        dt.current?.exportCSV();
-    };
 
     const confirmDeleteSelected = () => {
         setDeleteProductsDialog(true);
     };
 
-    const deleteSelectedProducts = () => {
-        let _products = (products as any)?.filter((val: any) => !(selectedProducts as any)?.includes(val));
-        setProducts(_products);
-        setDeleteProductsDialog(false);
-        setSelectedProducts(null);
-        toast.current?.show({
-            severity: 'success',
-            summary: 'Successful',
-            detail: 'Products Deleted',
-            life: 3000
+    /* const deleteSelectedProducts = () => {
+         let _cabins = (cabins as any)?.filter((val: any) => !(selectedCabins as any)?.includes(val));
+         setCabins(_cabins);
+         setDeleteProductsDialog(false);
+         setSelectedProducts(null);
+         
+         toast.current?.show({
+             severity: 'success',
+             summary: 'Successful',
+             detail: 'Products Deleted',
+             life: 3000
+         });
+     };*/
+     const deleteSelectedCabins = () => {
+        const selectedCabinsIds = selectedCabins.map(cabin => cabin.idcabin);
+        const token = localStorage.getItem('accessToken');
+    
+        // Set headers with authorization token
+        const headers = {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+        };
+    
+        // Use Promise.all to create an array of delete requests
+        const deleteRequests = selectedCabinsIds.map(id => {
+            return axios.delete(`http://localhost:8080/api/v1/cabins/delete/${id}`, { headers });
         });
+    
+        Promise.all(deleteRequests)
+            .then(responses => {
+                setDeleteProductsDialog(false);
+                setSelectedCabins([]);
+                toast.current?.show({
+                    severity: 'success',
+                    summary: 'Successful',
+                    detail: 'Cabins Deleted',
+                    life: 3000
+                });
+                window.location.href = window.location.href;
+            })
+            .catch(error => {
+                console.error('Error deleting cabins:', error);
+            });
     };
+    
 
-    const onCategoryChange = (e: RadioButtonChangeEvent) => {
-        let _product = { ...product };
-        _product['category'] = e.value;
-        setProduct(_product);
-    };
+
+    // const onCategoryChange = (e: RadioButtonChangeEvent) => {
+    //     let _cabin = { ...cabin};
+    //     _cabin['category'] = e.value;
+    //     setCabin(_cabin);
+    // };
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, name: string) => {
         const val = (e.target && e.target.value) || '';
-        let _product = { ...product };
-        _product[`${name}`] = val;
-
-        setProduct(_product);
+        console.log("valeur est :" + val);
+        let _cabin = { ...cabin };
+        _cabin[`${name}`] = val;
+        setCabin(_cabin);
     };
 
     const onInputNumberChange = (e: InputNumberValueChangeEvent, name: string) => {
         const val = e.value || 0;
-        let _product = { ...product };
-        _product[`${name}`] = val;
-
-        setProduct(_product);
+        let _cabin = { ...cabin };
+        _cabin[`${name}`] = val;
+        setCabin(_cabin);
     };
 
     const leftToolbarTemplate = () => {
         return (
             <React.Fragment>
                 <div className="my-2">
-                    <Button label="New" icon="pi pi-plus" severity="success" className=" mr-2" onClick={openNew} />
-                    <Button label="Delete" icon="pi pi-trash" severity="danger" onClick={confirmDeleteSelected} disabled={!selectedProducts || !(selectedProducts as any).length} />
+                    <Button label="Ajouter" icon="pi pi-plus" severity="success" className=" mr-2" onClick={openNew} />
+                    <Button label="Supprimer" icon="pi pi-trash" severity="danger" onClick={confirmDeleteSelected} disabled={!selectedCabins || !(selectedCabins as any).length} />
                 </div>
             </React.Fragment>
         );
     };
 
-    const rightToolbarTemplate = () => {
-        return (
-            <React.Fragment>
-                <FileUpload mode="basic" accept="image/*" maxFileSize={1000000} chooseLabel="Import" className="mr-2 inline-block" />
-                <Button label="Export" icon="pi pi-upload" severity="help" onClick={exportCSV} />
-            </React.Fragment>
-        );
-    };
 
-    const codeBodyTemplate = (rowData: Demo.Product) => {
+    const codeBodyTemplate = (rowData: Demo.CabinAff) => {
         return (
             <>
                 <span className="p-column-title">Code</span>
-                {rowData.code}
+                {rowData.idcabin}
             </>
         );
     };
 
-    const nameBodyTemplate = (rowData: Demo.Product) => {
+    const nameBodyTemplate = (rowData: Demo.CabinAff) => {
         return (
             <>
                 <span className="p-column-title">Name</span>
@@ -231,16 +365,16 @@ const Crud = () => {
         );
     };
 
-    const imageBodyTemplate = (rowData: Demo.Product) => {
+    const imageBodyTemplate = (rowData: Demo.CabinAff) => {
         return (
             <>
                 <span className="p-column-title">Image</span>
-                <img src={`/demo/images/product/${rowData.image}`} alt={rowData.image} className="shadow-2" width="100" />
+                <img src={`data:image/jpeg;base64,${rowData.imageFile}`} className="shadow-2" width="100" />
             </>
         );
     };
 
-    const priceBodyTemplate = (rowData: Demo.Product) => {
+    const priceBodyTemplate = (rowData: Demo.CabinAff) => {
         return (
             <>
                 <span className="p-column-title">Price</span>
@@ -249,38 +383,38 @@ const Crud = () => {
         );
     };
 
-    const categoryBodyTemplate = (rowData: Demo.Product) => {
+    const categoryBodyTemplate = (rowData: Demo.CabinAff) => {
         return (
             <>
-                <span className="p-column-title">Category</span>
-                {rowData.category}
+                <span className="p-column-title">Capacite</span>
+                {rowData.capacite}
             </>
         );
     };
 
-    const ratingBodyTemplate = (rowData: Demo.Product) => {
+    const ratingBodyTemplate = (rowData: Demo.CabinAff) => {
         return (
             <>
-                <span className="p-column-title">Reviews</span>
-                <Rating value={rowData.rating} readOnly cancel={false} />
+                <span className="p-column-title">Descreption</span>
+                {rowData.descreption}
             </>
         );
     };
 
-    const statusBodyTemplate = (rowData: Demo.Product) => {
-        return (
-            <>
-                <span className="p-column-title">Status</span>
-                <span className={`product-badge status-${rowData.inventoryStatus?.toLowerCase()}`}>{rowData.inventoryStatus}</span>
-            </>
-        );
-    };
+    // const statusBodyTemplate = (rowData: Demo.Cabin) => {
+    //     return (
+    //         <>
+    //             <span className="p-column-title">Status</span>
+    //             <span className={`product-badge status-${rowData.inventoryStatus?.toLowerCase()}`}>{rowData.inventoryStatus}</span>
+    //         </>
+    //     );
+    // };
 
-    const actionBodyTemplate = (rowData: Demo.Product) => {
+    const actionBodyTemplate = (rowData: Demo.CabinAff) => {
         return (
             <>
-                <Button icon="pi pi-pencil" rounded severity="success" className="mr-2" onClick={() => editProduct(rowData)} />
-                <Button icon="pi pi-trash" rounded severity="warning" onClick={() => confirmDeleteProduct(rowData)} />
+                <Button icon="pi pi-pencil" rounded severity="success" className="mr-2" onClick={() => editCabin(rowData)} />
+                <Button icon="pi pi-trash" rounded severity="warning" onClick={() => confirmDeleteCabin(rowData)} />
             </>
         );
     };
@@ -301,6 +435,41 @@ const Crud = () => {
             <Button label="Save" icon="pi pi-check" text onClick={saveProduct} />
         </>
     );
+    const EditedCabin = () => {
+        setSubmitted(true);
+    
+        if (cabinaff.name.trim()) {
+            const token = localStorage.getItem('accessToken');
+            const headers = {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+    
+            axios.put(`http://localhost:8080/api/v1/cabins/update/${cabinaff.idcabin}`, cabinaff, { headers })
+                .then(response => {
+                    setEditDialog(false);
+                    toast.current?.show({
+                        severity: 'success',
+                        summary: 'Successful',
+                        detail: 'Cabin Updated',
+                        life: 3000
+                    });
+                    window.location.href = window.location.href;
+                })
+                .catch(error => {
+                    console.error('Error updating cabin:', error);
+                });
+        } else {
+            console.error('Invalid cabin details');
+        }
+    };
+    
+    const EditDialogFooter = (
+        <>
+            <Button label="Cancel" icon="pi pi-times" text onClick={hideDialog} />
+            <Button label="Save" icon="pi pi-check" text onClick={EditedCabin} />
+        </>
+    );
     const deleteProductDialogFooter = (
         <>
             <Button label="No" icon="pi pi-times" text onClick={hideDeleteProductDialog} />
@@ -310,7 +479,7 @@ const Crud = () => {
     const deleteProductsDialogFooter = (
         <>
             <Button label="No" icon="pi pi-times" text onClick={hideDeleteProductsDialog} />
-            <Button label="Yes" icon="pi pi-check" text onClick={deleteSelectedProducts} />
+            <Button label="Yes" icon="pi pi-check" text onClick={deleteSelectedCabins} />
         </>
     );
 
@@ -319,14 +488,14 @@ const Crud = () => {
             <div className="col-12">
                 <div className="card">
                     <Toast ref={toast} />
-                    <Toolbar className="mb-4" left={leftToolbarTemplate} right={rightToolbarTemplate}></Toolbar>
+                    <Toolbar className="mb-4" left={leftToolbarTemplate} right={" "}></Toolbar>
 
                     <DataTable
                         ref={dt}
-                        value={products}
-                        selection={selectedProducts}
-                        onSelectionChange={(e) => setSelectedProducts(e.value as any)}
-                        dataKey="id"
+                        value={cabins}
+                        selection={selectedCabins}
+                        onSelectionChange={(e) => setSelectedCabins(e.value)}
+                        dataKey="idcabin"
                         paginator
                         rows={10}
                         rowsPerPageOptions={[5, 10, 25]}
@@ -339,77 +508,96 @@ const Crud = () => {
                         responsiveLayout="scroll"
                     >
                         <Column selectionMode="multiple" headerStyle={{ width: '4rem' }}></Column>
-                        <Column field="code" header="Code" sortable body={codeBodyTemplate} headerStyle={{ minWidth: '15rem' }}></Column>
-                        <Column field="name" header="Name" sortable body={nameBodyTemplate} headerStyle={{ minWidth: '15rem' }}></Column>
+                        <Column field="description" header="Description" sortable body={ratingBodyTemplate} headerStyle={{ minWidth: '15rem' }}></Column>
+                        <Column field="name" header="Nom" sortable body={nameBodyTemplate} headerStyle={{ minWidth: '15rem' }}></Column>
                         <Column header="Image" body={imageBodyTemplate}></Column>
-                        <Column field="price" header="Price" body={priceBodyTemplate} sortable></Column>
-                        <Column field="category" header="Category" sortable body={categoryBodyTemplate} headerStyle={{ minWidth: '10rem' }}></Column>
-                        <Column field="rating" header="Reviews" body={ratingBodyTemplate} sortable></Column>
-                        <Column field="inventoryStatus" header="Status" body={statusBodyTemplate} sortable headerStyle={{ minWidth: '10rem' }}></Column>
+                        <Column field="price" header="Prix" body={priceBodyTemplate} sortable></Column>
+                        <Column field="capacite" header="Capacite" sortable body={categoryBodyTemplate} headerStyle={{ minWidth: '10rem' }}></Column>
+                        {/* <Column field="rating" header="Reviews" body={ratingBodyTemplate} sortable></Column>
+                        <Column field="inventoryStatus" header="Status" body={statusBodyTemplate} sortable headerStyle={{ minWidth: '10rem' }}></Column>*/}
                         <Column body={actionBodyTemplate} headerStyle={{ minWidth: '10rem' }}></Column>
                     </DataTable>
 
-                    <Dialog visible={productDialog} style={{ width: '450px' }} header="Product Details" modal className="p-fluid" footer={productDialogFooter} onHide={hideDialog}>
-                        {product.image && <img src={`/demo/images/product/${product.image}`} alt={product.image} width="150" className="mt-0 mx-auto mb-5 block shadow-2" />}
+                    <Dialog visible={productDialog} style={{ width: '450px' }} header="Details Du Chambre" modal className="p-fluid" footer={productDialogFooter} onHide={hideDialog}>
                         <div className="field">
-                            <label htmlFor="name">Name</label>
+                            <label htmlFor="name">Nom</label>
                             <InputText
                                 id="name"
-                                value={product.name}
+                                value={cabin.name}
                                 onChange={(e) => onInputChange(e, 'name')}
                                 required
                                 autoFocus
                                 className={classNames({
-                                    'p-invalid': submitted && !product.name
+                                    'p-invalid': submitted && !cabin.name
                                 })}
                             />
-                            {submitted && !product.name && <small className="p-invalid">Name is required.</small>}
+                            {submitted && !cabin.name && <small className="p-invalid">Name is required.</small>}
                         </div>
                         <div className="field">
                             <label htmlFor="description">Description</label>
-                            <InputTextarea id="description" value={product.description} onChange={(e) => onInputChange(e, 'description')} required rows={3} cols={20} />
+                            <InputTextarea id="description" value={cabin.descreption} onChange={(e) => onInputChange(e, 'descreption')} required rows={3} cols={20} />
                         </div>
-
-                        <div className="field">
-                            <label className="mb-3">Category</label>
-                            <div className="formgrid grid">
-                                <div className="field-radiobutton col-6">
-                                    <RadioButton inputId="category1" name="category" value="Accessories" onChange={onCategoryChange} checked={product.category === 'Accessories'} />
-                                    <label htmlFor="category1">Accessories</label>
-                                </div>
-                                <div className="field-radiobutton col-6">
-                                    <RadioButton inputId="category2" name="category" value="Clothing" onChange={onCategoryChange} checked={product.category === 'Clothing'} />
-                                    <label htmlFor="category2">Clothing</label>
-                                </div>
-                                <div className="field-radiobutton col-6">
-                                    <RadioButton inputId="category3" name="category" value="Electronics" onChange={onCategoryChange} checked={product.category === 'Electronics'} />
-                                    <label htmlFor="category3">Electronics</label>
-                                </div>
-                                <div className="field-radiobutton col-6">
-                                    <RadioButton inputId="category4" name="category" value="Fitness" onChange={onCategoryChange} checked={product.category === 'Fitness'} />
-                                    <label htmlFor="category4">Fitness</label>
-                                </div>
-                            </div>
-                        </div>
-
                         <div className="formgrid grid">
                             <div className="field col">
-                                <label htmlFor="price">Price</label>
-                                <InputNumber id="price" value={product.price} onValueChange={(e) => onInputNumberChange(e, 'price')} mode="currency" currency="USD" locale="en-US" />
+                                <label htmlFor="price">Prix</label>
+                                <InputNumber id="price" value={cabin.price} onValueChange={(e) => onInputNumberChange(e, 'price')} mode="currency" currency="USD" locale="en-US" />
                             </div>
                             <div className="field col">
-                                <label htmlFor="quantity">Quantity</label>
-                                <InputNumber id="quantity" value={product.quantity} onValueChange={(e) => onInputNumberChange(e, 'quantity')} />
+                                <label htmlFor="quantity">Capacite</label>
+                                <InputNumber id="quantity" value={cabin.capacite} onValueChange={(e) => onInputNumberChange(e, 'capacite')} />
                             </div>
                         </div>
-                    </Dialog>
+                        <div className="formgrid grid">
+                            {/* <FileUpload
+                                mode="basic"
+                                accept="image/*"
+                                maxFileSize={1000000}
+                                chooseLabel="Upload"
+                                onUpload={onUpload}
+                            />     </div> */}
+                            <input type="file" accept="image/*" onChange={handleImageChange} />
+                        </div>
 
+                    </Dialog>
+                    <Dialog visible={editDialog} style={{ width: '450px' }} header="Modifer Chambre" modal className="p-fluid" footer={productDialogFooter} onHide={hideDialogedit}>
+                        {cabinaff.imageFile && <img src={`data:image/jpeg;base64,${cabinaff.imageFile}`} alt={cabinaff.name} width="150" className="mt-0 mx-auto mb-5 block shadow-2" />}
+                        <div className="field">
+                            <label htmlFor="name">Nom</label>
+                            <InputText
+                                id="name"
+                                value={cabinaff.name}
+                                onChange={(e) => onInputChange(e, 'name')}
+                                required
+                                autoFocus
+                                className={classNames({
+                                    'p-invalid': submitted && !cabinaff.name
+                                })}
+                            />
+                            {submitted && !cabinaff.name && <small className="p-invalid">Name is required.</small>}
+                        </div>
+                        <div className="field">
+                            <label htmlFor="description">Description</label>
+                            <InputTextarea id="description" value={cabinaff.descreption} onChange={(e) => onInputChange(e, 'descreption')} required rows={3} cols={20} />
+                        </div>
+                        <div className="formgrid grid">
+                            <div className="field col">
+                                <label htmlFor="price">Prix</label>
+                                <InputNumber id="price" value={cabinaff.price} onValueChange={(e) => onInputNumberChange(e, 'price')} mode="currency" currency="USD" locale="en-US" />
+                            </div>
+                            <div className="field col">
+                                <label htmlFor="quantity">Capacite</label>
+                                <InputNumber id="quantity" value={cabinaff.capacite} onValueChange={(e) => onInputNumberChange(e, 'capacite')} />
+                            </div>
+                        </div>
+
+
+                    </Dialog>
                     <Dialog visible={deleteProductDialog} style={{ width: '450px' }} header="Confirm" modal footer={deleteProductDialogFooter} onHide={hideDeleteProductDialog}>
                         <div className="flex align-items-center justify-content-center">
                             <i className="pi pi-exclamation-triangle mr-3" style={{ fontSize: '2rem' }} />
-                            {product && (
+                            {cabinaff && (
                                 <span>
-                                    Are you sure you want to delete <b>{product.name}</b>?
+                                    Are you sure you want to delete <b>{cabinaff.name}</b>?
                                 </span>
                             )}
                         </div>
@@ -418,7 +606,7 @@ const Crud = () => {
                     <Dialog visible={deleteProductsDialog} style={{ width: '450px' }} header="Confirm" modal footer={deleteProductsDialogFooter} onHide={hideDeleteProductsDialog}>
                         <div className="flex align-items-center justify-content-center">
                             <i className="pi pi-exclamation-triangle mr-3" style={{ fontSize: '2rem' }} />
-                            {product && <span>Are you sure you want to delete the selected products?</span>}
+                            {cabins && <span>Are you sure you want to delete the selected products?</span>}
                         </div>
                     </Dialog>
                 </div>
