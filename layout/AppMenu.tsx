@@ -19,39 +19,35 @@ const AppMenu = () => {
             label: 'Fonctionnalités',
             items: [
                 { label: 'Profile', icon: 'pi pi-fw pi-id-card', to: '/uikit/formlayout' },
-              
-                
+
+
                 { label: 'Réservations', icon: 'pi pi-fw pi-table', to: '/uikit/table' },
-              
-               
-                    {
-                        label: 'Auth',
-                        icon: 'pi pi-fw pi-user',
-                        items: [
-                            {
-                                label: 'Login',
-                                icon: 'pi pi-fw pi-sign-in',
-                                to: '/auth/login'
-                            },
-                            
-                            
-                        ]
-                    },
-                    
-                   
-                   
-                
-               
-                
+
+
+                {
+                    label: 'Login',
+                    icon: 'pi pi-fw pi-sign-in',
+                    to: '/auth/login'
+                },
+
+
+                {
+                    label: 'Crud',
+                    icon: 'pi pi-fw pi-pencil',
+                    to: '/pages/crud'
+                },
+
+
+
             ]
         },
+
        
-       
-        
-               
-            
-       
-       
+
+
+
+
+
     ];
 
     return (
