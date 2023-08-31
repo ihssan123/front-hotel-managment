@@ -6,8 +6,12 @@ import { Button } from 'primereact/button';
 import axios from 'axios';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+//import { ToastContainer, toast } from 'react-toastify';
+//import 'react-toastify/dist/ReactToastify.css';
+import Swal from 'sweetalert2';
+
+
+
 
 interface DropdownItem {
     name: string;
@@ -59,11 +63,14 @@ const FormLayoutDemo = () => {
         .then((response: any) => {
             console.log(response.data);
             localStorage.setItem('user', JSON.stringify(userObject));
-            toast.success('Update successful'); // Show success toast
+           // toast.success('Update successful'); // Show success toast
+           Swal.fire('Success', 'Update successful', 'success');
         })
         .catch((error: any) => {
             console.error(error);
-            toast.error('Update failed'); // Show error toast
+           // toast.error('Update failed'); // Show error toast
+           Swal.fire('Error', 'Update failed', 'error');
+
         });
     };
     

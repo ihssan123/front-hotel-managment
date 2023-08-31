@@ -4,8 +4,116 @@ import { Chart } from 'primereact/chart';
 import React, { useContext, useEffect, useState } from 'react';
 import { LayoutContext } from '../../../../layout/context/layoutcontext';
 import type { ChartDataState, ChartOptionsState } from '../../../../types/types';
+import axios from 'axios';
 
 const ChartDemo = () => {
+
+    
+
+    //const token=localStorage.getItem('accessToken');
+    //const[userObject,setUserObject]=useState([])
+  
+
+    //useEffect(() => {
+      //  const user = localStorage.getItem('user');
+        //if (user !== null) {
+          //  setUserObject(JSON.parse(user));
+        //} else {
+          //  console.log("erreur");
+       // }
+    //}, []); 
+
+
+     const [chartDataaa, setChartDataaa] = useState({
+        labels: [],
+        datasets: [
+            {
+                label: 'Bénéfice par mois',
+                data: [],
+                fill: false,
+                backgroundColor: '#6366f1',
+                borderColor: '#6366f1',
+                tension: 0.4
+            }
+        ]
+    });
+
+
+    const token = localStorage.getItem('accessToken');
+    const [userObject, setUserObject] = useState([]);
+
+    useEffect(() => {
+        const user = localStorage.getItem('user');
+        if (user !== null) {
+            setUserObject(JSON.parse(user));
+        } else {
+            console.log("erreur");
+        }
+    }, []);
+
+
+
+
+
+    //const handleStatistic = () => {
+      //  const url = `http://localhost:8080/api/v1/reservations/statistics/profitPerMonth`;
+    
+        //axios.put(url, userObject, {
+          //  headers: {
+            //    Authorization: `Bearer ${token}`
+            //}
+        //})
+        //.then((response: any) => {
+          //  console.log(response.data);
+            //setChartDataa(response.data); // Mettre à jour l'état avec les données du graphique
+            //localStorage.setItem('user', JSON.stringify(userObject));
+        //})
+        //.catch((error: any) => {
+          //  console.error(error);
+        //});
+    //};
+
+
+
+
+    useEffect(() => {
+        const url = 'http://localhost:8080/api/v1/reservations/statistics/profitPerMonth';
+
+        axios.get(url, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            const apiData = response.data;
+
+            const labels = Object.keys(apiData);
+            const data = Object.values(apiData);
+
+            const updatedChartData = {
+                ...chartDataaa,
+                labels,
+                datasets: [
+                    {
+                        ...chartDataaa.datasets[0],
+                        data
+                    }
+                ]
+            };
+
+            setChartDataaa(updatedChartData);
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    }, []);
+
+
+
+
+
+
+
     const [options, setOptions] = useState<ChartOptionsState>({});
     const [data, setChartData] = useState<ChartDataState>({});
     const { layoutConfig } = useContext(LayoutContext);
@@ -16,7 +124,7 @@ const ChartDemo = () => {
         const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary') || '#6c757d';
         const surfaceBorder = documentStyle.getPropertyValue('--surface-border') || '#dfe7ef';
         const barData: ChartData = {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+            labels: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
             datasets: [
                 {
                     label: 'My First dataset',
@@ -93,7 +201,7 @@ const ChartDemo = () => {
         };
 
         const lineData: ChartData = {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+            labels: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
             datasets: [
                 {
                     label: 'First Dataset',
@@ -102,16 +210,7 @@ const ChartDemo = () => {
                     backgroundColor: documentStyle.getPropertyValue('--primary-500') || '#6366f1',
                     borderColor: documentStyle.getPropertyValue('--primary-500') || '#6366f1',
                     tension: 0.4
-                },
-                {
-                    label: 'Second Dataset',
-                    data: [28, 48, 40, 19, 86, 27, 90],
-                    fill: false,
-                    backgroundColor: documentStyle.getPropertyValue('--primary-200') || '#bcbdf9',
-                    borderColor: documentStyle.getPropertyValue('--primary-200') || '#bcbdf9',
-                    tension: 0.4
-                }
-            ]
+                }            ]
         };
 
         const lineOptions: ChartOptions = {
@@ -237,15 +336,31 @@ const ChartDemo = () => {
             radarData
         });
     }, [layoutConfig]);
+    const [chartDataa, setChartDataa] = useState<ChartDataState>({});
+    
 
     return (
+
+
+
+
+
         <div className="grid p-fluid">
-            <div className="col-12 xl:col-6">
-                <div className="card">
-                    <h5>Linear Chart</h5>
-                    <Chart type="line" data={data.lineData} options={options.lineOptions}></Chart>
-                </div>
+        <div className="col-12 xl:col-6">
+            <div className="card">
+                <h5>Bénéfice par mois</h5>
+                <Chart type="line" data={chartDataaa} options={options.lineOptions}></Chart>
             </div>
+        </div>
+
+
+
+
+            
+
+
+
+
             <div className="col-12 xl:col-6">
                 <div className="card">
                     <h5>Bar Chart</h5>
