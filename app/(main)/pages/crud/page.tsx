@@ -4,6 +4,8 @@
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
+import { MultiSelect } from 'primereact/multiselect';
+
 import { Dialog } from 'primereact/dialog';
 import { FileUpload } from 'primereact/fileupload';
 import { InputNumber, InputNumberValueChangeEvent } from 'primereact/inputnumber';
@@ -33,18 +35,38 @@ const Crud = () => {
         inventoryStatus: 'INSTOCK'
     };
     let emptyCabin: Demo.Cabin = {
-
         name: '',
-        descreption: '',
-        price: 0,
         capacite: 0,
+        price: 0,
+        descreption: '',
+        typecabin: '',
+        discount: 0,
+        surface: 0,
+        basicFeatures: '',
+        bedroomFeatures: '',
+        livingRoomFeatures: '',
+        kitchenFeatures: '',
+        bathroomFeatures: '',
+        additionalFeatures: ''
     };
+
+
+
     let emptyCabinAff: Demo.CabinAff = {
         idcabin: 0,
         name: '',
-        descreption: '',
-        price: 0,
         capacite: 0,
+        price: 0,
+        descreption: '',
+        typecabin: '',
+        discount: 0,
+        surface: 0,
+        basicFeatures: '',
+        bedroomFeatures: '',
+        livingRoomFeatures: '',
+        kitchenFeatures: '',
+        bathroomFeatures: '',
+        additionalFeatures: '',
         imageFile: null,
     };
 
@@ -76,6 +98,44 @@ const Crud = () => {
 
         fetchData();
     }, []);
+    // const [selectedBasicFeatures, setSelectedBasicFeatures] = useState('');
+
+    const handleBasicFeaturesChange = (e) => {
+        const val = (e.target && e.target.value) || '';
+        console.log("valeur est :" + val);
+        let _cabin = { ...cabin };
+        _cabin[`basicFeatures`] = val;
+        setCabin(_cabin);
+    };
+    const handleBedroomAmenitiesChange = (e) => {
+        const val = (e.target && e.target.value) || '';
+        console.log("valeur est :" + val);
+        let _cabin = { ...cabin };
+        _cabin[`bedroomFeatures`] = val;
+
+        setCabin(_cabin);
+    };
+    const handleKitchenEquipmentChange = (e) => {
+        const val = (e.target && e.target.value) || '';
+        console.log("valeur est :" + val);
+        let _cabin = { ...cabin };
+        _cabin[`kitchenFeatures`] = val;
+        setCabin(_cabin);
+    };
+    const handleToiletryItemsChange = (e) => {
+        const val = (e.target && e.target.value) || '';
+        console.log("valeur est :" + val);
+        let _cabin = { ...cabin };
+        _cabin[`bathroomFeatures`] = val;
+        setCabin(_cabin);
+    };
+    const handleAdditionalAmenitiesChange = (e) => {
+        const val = (e.target && e.target.value) || '';
+        console.log("valeur est :" + val);
+        let _cabin = { ...cabin };
+        _cabin[`additionalFeatures`] = val;
+        setCabin(_cabin);
+    };
     const formatCurrency = (value: number) => {
         return value.toLocaleString('en-US', {
             style: 'currency',
@@ -98,13 +158,13 @@ const Crud = () => {
     //         life: 3000
     //     });
     // };
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onFileSelect = (event: any) => {
         const file = event.target.files && event.target.files[0];
         if (file) {
             setSelectedImage(file);
         }
     };
-
+  
     // Rest of your code...
 
     const saveProduct = () => {
@@ -236,14 +296,14 @@ const Crud = () => {
         setCabinAff(cabin);
         setDeleteProductDialog(true);
     };
-    
+
     const deleteProduct = () => {
         const token = localStorage.getItem('accessToken');
         const headers = {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         };
-    
+
         axios.delete(`http://localhost:8080/api/v1/cabins/delete/${cabinaff.idcabin}`, { headers })
             .then(response => {
                 setDeleteProductDialog(false);
@@ -253,13 +313,13 @@ const Crud = () => {
                     detail: 'Cabin Deleted',
                     life: 3000
                 });
-                     window.location.href = window.location.href;
+                window.location.href = window.location.href;
             })
             .catch(error => {
                 console.error('Error deleting cabin:', error);
             });
     };
-    
+
 
 
 
@@ -280,21 +340,21 @@ const Crud = () => {
              life: 3000
          });
      };*/
-     const deleteSelectedCabins = () => {
+    const deleteSelectedCabins = () => {
         const selectedCabinsIds = selectedCabins.map(cabin => cabin.idcabin);
         const token = localStorage.getItem('accessToken');
-    
+
         // Set headers with authorization token
         const headers = {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         };
-    
+
         // Use Promise.all to create an array of delete requests
         const deleteRequests = selectedCabinsIds.map(id => {
             return axios.delete(`http://localhost:8080/api/v1/cabins/delete/${id}`, { headers });
         });
-    
+
         Promise.all(deleteRequests)
             .then(responses => {
                 setDeleteProductsDialog(false);
@@ -311,7 +371,7 @@ const Crud = () => {
                 console.error('Error deleting cabins:', error);
             });
     };
-    
+
 
 
     // const onCategoryChange = (e: RadioButtonChangeEvent) => {
@@ -437,14 +497,14 @@ const Crud = () => {
     );
     const EditedCabin = () => {
         setSubmitted(true);
-    
+
         if (cabinaff.name.trim()) {
             const token = localStorage.getItem('accessToken');
             const headers = {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json'
             };
-    
+
             axios.put(`http://localhost:8080/api/v1/cabins/update/${cabinaff.idcabin}`, cabinaff, { headers })
                 .then(response => {
                     setEditDialog(false);
@@ -463,7 +523,7 @@ const Crud = () => {
             console.error('Invalid cabin details');
         }
     };
-    
+
     const EditDialogFooter = (
         <>
             <Button label="Cancel" icon="pi pi-times" text onClick={hideDialog} />
@@ -539,25 +599,111 @@ const Crud = () => {
                         </div>
                         <div className="formgrid grid">
                             <div className="field col">
+                                <label htmlFor="surface">Surface</label>
+                                <InputNumber id="surface" value={cabinaff.surface} onValueChange={(e) => onInputNumberChange(e, 'surface')} />
+                            </div>
+                            <div className="field col">
+                                <label htmlFor="quantity">Capacite</label>
+                                <InputNumber id="quantity" value={cabinaff.capacite} onValueChange={(e) => onInputNumberChange(e, 'capacite')} />
+                            </div>
+                        </div>
+                        <div className="formgrid grid">
+                            <div className="field col">
                                 <label htmlFor="price">Prix</label>
                                 <InputNumber id="price" value={cabin.price} onValueChange={(e) => onInputNumberChange(e, 'price')} mode="currency" currency="USD" locale="en-US" />
                             </div>
                             <div className="field col">
-                                <label htmlFor="quantity">Capacite</label>
-                                <InputNumber id="quantity" value={cabin.capacite} onValueChange={(e) => onInputNumberChange(e, 'capacite')} />
+                                <label htmlFor="discount">Discount</label>
+                                <InputNumber id="discount" value={cabin.discount} onValueChange={(e) => onInputNumberChange(e, 'discount')} />
                             </div>
                         </div>
-                        <div className="formgrid grid">
-                            {/* <FileUpload
-                                mode="basic"
-                                accept="image/*"
-                                maxFileSize={1000000}
-                                chooseLabel="Upload"
-                                onUpload={onUpload}
-                            />     </div> */}
-                            <input type="file" accept="image/*" onChange={handleImageChange} />
-                        </div>
 
+
+                        <div className="field">
+                            <label>Caractéristiques de base:</label>
+                            <MultiSelect
+                                id="basicFeatures"
+                                value={cabin.basicFeatures}
+                                options={[
+                                    'Climatisation',
+                                    'Chauffage',
+                                    'Wi-Fi',
+                                    'Télévision par câble'
+                                ]}
+                                onChange={handleBasicFeaturesChange}
+                            />
+                        </div>
+                        <div className="field">
+                            <label>Commodités de la chambre:</label>
+                            <MultiSelect
+                                id="bedroomAmenities"
+                                value={cabin.bedroomFeatures}
+                                options={[
+                                    'Grand lit double',
+                                    'Lits',
+                                    'Placard'
+                                ]}
+                                onChange={handleBedroomAmenitiesChange}
+                            />
+                        </div>
+                        <div className="field">
+                            <label>Équipements de cuisine:</label>
+                            <MultiSelect
+                                id="kitchenEquipment"
+                                value={cabin.kitchenFeatures}
+                                options={[
+                                    'Réfrigérateur',
+                                    'Micro-ondes',
+                                    'Four',
+                                    'Bouilloire électrique',
+                                    'Cafetière',
+                                    'Grille-pain',
+                                    'Ustensiles',
+                                    'Table à manger'
+                                ]}
+                                onChange={handleKitchenEquipmentChange}
+                            />
+                        </div>
+                        <div className="field">
+                            <label>Articles de toilette:</label>
+                            <MultiSelect
+                                id="toiletryItems"
+                                value={cabin.bathroomFeatures}
+                                options={[
+                                    'Douche',
+                                    'Serviettes',
+                                    'Toilette'
+                                ]}
+                                onChange={handleToiletryItemsChange}
+                            />
+                        </div>
+                        <div className="field">
+                            <label>Commodités supplémentaires:</label>
+                            <MultiSelect
+                                id="additionalAmenities"
+                                value={cabin.additionalFeatures}
+                                options={[
+                                    'Balcon avec vue sur la mer',
+                                    'Terrasse',
+                                    'Vue sur la piscine',
+                                    'Jacuzzi'
+                                ]}
+                                onChange={handleAdditionalAmenitiesChange}
+                            />
+                        </div>
+                        <div className="field">
+                            <label>Image:</label>
+
+                            <FileUpload
+                                name="file"
+                                chooseLabel="Choose"
+                                uploadLabel="Upload"
+                                cancelLabel="Cancel"
+                                customUpload
+                                uploadHandler={onFileSelect}
+                            />
+
+                        </div>
                     </Dialog>
                     <Dialog visible={editDialog} style={{ width: '450px' }} header="Modifer Chambre" modal className="p-fluid" footer={productDialogFooter} onHide={hideDialogedit}>
                         {cabinaff.imageFile && <img src={`data:image/jpeg;base64,${cabinaff.imageFile}`} alt={cabinaff.name} width="150" className="mt-0 mx-auto mb-5 block shadow-2" />}
@@ -581,12 +727,22 @@ const Crud = () => {
                         </div>
                         <div className="formgrid grid">
                             <div className="field col">
-                                <label htmlFor="price">Prix</label>
-                                <InputNumber id="price" value={cabinaff.price} onValueChange={(e) => onInputNumberChange(e, 'price')} mode="currency" currency="USD" locale="en-US" />
+                                <label htmlFor="surface">Surface</label>
+                                <InputNumber id="surface" value={cabinaff.surface} onValueChange={(e) => onInputNumberChange(e, 'price')} mode="currency" currency="USD" locale="en-US" />
                             </div>
                             <div className="field col">
                                 <label htmlFor="quantity">Capacite</label>
                                 <InputNumber id="quantity" value={cabinaff.capacite} onValueChange={(e) => onInputNumberChange(e, 'capacite')} />
+                            </div>
+                        </div>
+                        <div className="formgrid grid">
+                            <div className="field col">
+                                <label htmlFor="price">Prix</label>
+                                <InputNumber id="price" value={cabinaff.price} onValueChange={(e) => onInputNumberChange(e, 'price')} mode="currency" currency="USD" locale="en-US" />
+                            </div>
+                            <div className="field col">
+                                <label htmlFor="discount">Discount</label>
+                                <InputNumber id="discount" value={cabinaff.discount} onValueChange={(e) => onInputNumberChange(e, 'capacite')} />
                             </div>
                         </div>
 

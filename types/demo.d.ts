@@ -134,19 +134,39 @@ declare namespace Demo {
         [key: string]: string | string[] | number | boolean | undefined | ProductOrder[] | InventoryStatus;
     };
     type Cabin = {
-     
-        name:string;
-        price:number
+        name: string;
         capacite: number;
+        price: number;
         descreption: string;
-    }
+        discount:number;
+        typecabin?: string; // Assuming type can be optional
+        surface?: number; // Assuming surface can be optional
+        basicFeatures?: string; // Assuming basicFeatures can be optional
+        bedroomFeatures?: string; // Assuming bedroomFeatures can be optional
+        livingRoomFeatures?: string; // Assuming livingRoomFeatures can be optional
+        kitchenFeatures?: string; // Assuming kitchenFeatures can be optional
+        bathroomFeatures?: string; // Assuming bathroomFeatures can be optional
+        additionalFeatures?: string; // Assuming additionalFeatures can be optional
+    };
+    
     type CabinAff = {
-        idcabin?: number | null;
-        name:string;
-        price:number
-        capacite: number;
-        descreption: string;
-        imageFile: Blob | null;
+            idcabin?: number; // Assuming idcabin can be optional
+            name: string;
+            capacite: number;
+            price: number;
+            discount:number;
+            descreption: string;
+            typecabin?: string; // Assuming type can be optional
+            surface?: number; // Assuming surface can be optional
+            basicFeatures?: string; // Assuming basicFeatures can be optional
+            bedroomFeatures?: string; // Assuming bedroomFeatures can be optional
+            livingRoomFeatures?: string; // Assuming livingRoomFeatures can be optional
+            kitchenFeatures?: string; // Assuming kitchenFeatures can be optional
+            bathroomFeatures?: string; // Assuming bathroomFeatures can be optional
+            additionalFeatures?: string;  // Assuming additionalFeatures can be optional
+            imageFile: Blob | null;
+        };
+        
     }
     type ProductOrder = {
         id?: string;
